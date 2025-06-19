@@ -1,13 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
-type ExternalProduct = {
+type BrazilianProduct = {
   id: string;
   nome: string;
   descricao?: string;
   imagem: string;
   preco: string;
 };
+
+type EuropeanProduct = {
+  id: string;
+  name: string;
+  description?: string;
+  gallery?: string[];
+  price: string;
+};
+
+type UnifiedProduct = BrazilianProduct | EuropeanProduct;
 
 @Injectable()
 export class ProductsService {
@@ -17,18 +27,41 @@ export class ProductsService {
     'http://616d6bdb6dacbb001794ca17.mockapi.io/devnology/european_provider';
 
   async getAll() {
-    const brResponse = await axios.get<ExternalProduct[]>(this.brazilianApi);
-    const euResponse = await axios.get<ExternalProduct[]>(this.europeanApi);
+    const brResponse = await axios.get<BrazilianProduct[]>(this.brazilianApi);
+    const euResponse = await axios.get<EuropeanProduct[]>(this.europeanApi);
 
-    const normalize = (data: ExternalProduct[], source: string) =>
-      data.map((item) => ({
-        id: `${source}-${item.id}`,
-        name: item.nome,
-        price: parseFloat(item.preco),
-        description: item.descricao || '',
-        image: item.imagem,
-        provider: source,
-      }));
+    const normalize = (
+      data: UnifiedProduct[],
+      source: string,
+    ): {
+      id: string;
+      name: string;
+      price: number;
+      description: string;
+      image: string;
+      provider: string;
+    }[] =>
+      data.map((item) => {
+        if ('nome' in item) {
+          return {
+            id: `${source}-${item.id}`,
+            name: item.nome,
+            price: parseFloat(item.preco),
+            description: item.descricao ?? '',
+            image: item.imagem,
+            provider: source,
+          };
+        } else {
+          return {
+            id: `${source}-${item.id}`,
+            name: item.name,
+            price: parseFloat(item.price),
+            description: item.description ?? '',
+            image: item.gallery?.[0] ?? '',
+            provider: source,
+          };
+        }
+      });
 
     return [
       ...normalize(brResponse.data, 'brazilian'),
@@ -43,16 +76,27 @@ export class ProductsService {
         ? `${this.brazilianApi}/${realId}`
         : `${this.europeanApi}/${realId}`;
 
-    const response = await axios.get<ExternalProduct>(url);
-    const data = response.data;
+    const response = await axios.get<UnifiedProduct>(url);
+    const item = response.data;
 
-    return {
-      id,
-      name: data.nome,
-      price: parseFloat(data.preco),
-      description: data.descricao || '',
-      image: data.imagem,
-      provider: source,
-    };
+    if ('nome' in item) {
+      return {
+        id,
+        name: item.nome,
+        price: parseFloat(item.preco),
+        description: item.descricao ?? '',
+        image: item.imagem, // <-- diretamente da API
+        provider: source,
+      };
+    } else {
+      return {
+        id,
+        name: item.name,
+        price: parseFloat(item.price),
+        description: item.description ?? '',
+        image: item.gallery?.[0] ?? '',
+        provider: source,
+      };
+    }
   }
 }

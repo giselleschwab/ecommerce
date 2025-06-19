@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -13,5 +13,10 @@ export class OrdersController {
   @Get()
   findAll() {
     return this.service.findAll();
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.service.delete(Number(id));
   }
 }
