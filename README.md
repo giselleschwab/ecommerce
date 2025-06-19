@@ -66,8 +66,8 @@ O repositório é organizado em duas pastas principais:
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
+git clone https://github.com/giselleschwab/ecommerce.git
+cd ecommerce
 ```
 
 ### 2. Rodar o Backend
